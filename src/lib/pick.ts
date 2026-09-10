@@ -165,6 +165,30 @@ export const askPick = createServerFn({ method: "POST" })
       : { ok: true, text };
   });
 
+export async function askPickInBrowser(messages: ChatTurn[]): Promise<AskPickResult> {
+  try {
+    const response = await fetch(FREE_CHAT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: FREE_MODEL,
+        messages: [{ role: "system", content: PICK_SYSTEM }, ...messages],
+        temperature: 0.7,
+        max_tokens: MAX_TOKENS,
+      }),
+    });
+    if (!response.ok) return { ok: false, error: "Stick's off-air right now. Try again in a sec." };
+    const body = (await response.json()) as {
+      choices?: { message?: { content?: string | null } }[];
+    };
+    const text = body.choices?.[0]?.message?.content?.trim();
+    if (!text) return { ok: false, error: "Stick's off-air right now. Try again in a sec." };
+    return { ok: true, text: stripMarkdown(text) };
+  } catch {
+    return { ok: false, error: "Stick's off-air right now. Try again in a sec." };
+  }
+}
+
 const TranscribeInput = z.object({
   audioBase64: z.string().min(24).max(3_000_000),
   mime: z.string().max(80),

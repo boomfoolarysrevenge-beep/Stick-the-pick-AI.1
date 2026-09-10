@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Send, Trash2, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PickOrb, type OrbMode } from "@/components/pick-orb";
-import { askPick, transcribeUtterance, type ChatTurn } from "@/lib/pick";
+import { askPick, askPickInBrowser, transcribeUtterance, type ChatTurn } from "@/lib/pick";
 import { cn } from "@/lib/utils";
 
 const HISTORY_KEY = "stick.history.v1";
@@ -427,7 +427,8 @@ export function PickStudio() {
       setStatus("Thinking");
 
       try {
-        const result = await askPick({ data: { messages: history } });
+        let result = await askPick({ data: { messages: history } });
+        if (!result.ok) result = await askPickInBrowser(history);
         if (!result.ok) {
           setError(result.error);
           if (micOnRef.current) resumeListening();
